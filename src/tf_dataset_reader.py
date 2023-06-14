@@ -54,7 +54,8 @@ class TfDatasetReader:
             data_dir=path_to_datasets,
             with_info=True,
             decoders=decoders,
-            read_config=tfds.ReadConfig(shuffle_seed=tfds_seed)
+            read_config=tfds.ReadConfig(shuffle_seed=tfds_seed),
+            try_gcs=False
             )
         if (self.examples_per_class is not None) and (dataset != "oxford_iiit_pet"):
              ds_context = self.sample_subset(

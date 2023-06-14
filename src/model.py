@@ -186,6 +186,8 @@ class FiT:
                 self.classifier.configure_from_features(context_features, context_labels)
 
             batch_target_set_size = len(batch_target_labels)
+            if iteration%50 == 0:
+                print('========batch_target_set_size',batch_target_set_size,'self.args.train_batch_size',self.args.train_batch_size)
             num_batches = int(np.ceil(float(batch_target_set_size) / float(self.args.train_batch_size)))
             if num_batches == 0:
                 # TODO: This occurs when there is only one image per class
@@ -196,6 +198,8 @@ class FiT:
             optimizer.zero_grad()
             torch.set_grad_enabled(True)
             for batch in range(num_batches):
+                if iteration%50 == 0:
+                    print('iteration=',iteration,'/',iterations,'   batch=',batch,'/',num_batches)
                 if not self.args.do_not_use_tasks:
                     self.classifier.configure_from_images(batch_context_images, batch_context_labels)
 
@@ -208,6 +212,7 @@ class FiT:
                 del logits
             optimizer.step()
         with torch.no_grad():
+            print('Len of context_labels',len(context_labels))
             context_images = context_images.to(self.device)
             context_labels = context_labels.to(self.device)
             context_features = self._compute_features_by_batch(context_images, self.args.test_batch_size)
@@ -216,6 +221,7 @@ class FiT:
     def _compute_features_by_batch(self, images, batch_size):
         features = []
         num_images = images.size(0)
+        print('==========================num_images=',num_images)
         num_batches = int(np.ceil(float(num_images) / float(batch_size)))
         for batch in range(num_batches):
             batch_start_index, batch_end_index = self._get_batch_indices(batch, num_images, batch_size)
@@ -232,6 +238,8 @@ class FiT:
             labels = []
             predictions = []
             for batch in range(num_batches):
+                if batch%40 == 0:
+                    print('test---   ',batch,'/',num_batches)
                 batch_images, batch_labels = dataset_reader.get_target_batch()
                 batch_images = batch_images.to(self.device)
                 batch_labels = batch_labels.type(torch.LongTensor).to(self.device)

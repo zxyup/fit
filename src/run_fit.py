@@ -10,7 +10,8 @@ from utils import Logger, compute_accuracy, limit_tensorflow_memory_usage, CsvWr
 from model import FiT
 from tf_dataset_reader import TfDatasetReader
 from datetime import datetime
-
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
 def main():
     learner = Learner()
@@ -26,7 +27,7 @@ class Learner:
         self.logger.print_and_log("Options: %s\n" % self.args)
         self.logger.print_and_log("Checkpoint Directory: %s\n" % self.args.checkpoint_dir)
 
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = FiT(args=self.args, device=self.device)
         self.accuracy_fn = compute_accuracy
         self.csv_writer = CsvWriter(
@@ -93,6 +94,7 @@ class Learner:
 
         with torch.no_grad():
             for dataset in datasets:
+                print(dataset['name'],'start!!!!')
                 if dataset['enabled'] is False:
                     continue
 
@@ -117,11 +119,16 @@ class Learner:
                     device=self.device,
                     osr=False
                 )
+                print(dataset['name'],'dataset read over!!!!')
                 context_images, context_labels = dataset_reader.get_context_batch()
+
+                print('Len of context_labels',dataset['name'],len(context_labels))
+                print(dataset['name'],'dataset distri over!!!!')
 
                 # fine tune the model to the current task
                 self.model.fine_tune(context_images, context_labels)
 
+                print(dataset['name'],'begin test!!!')
                 # test the model
                 accuracy = (self.model.test_vtab(dataset_reader, context_labels, dataset['num_classes'])).cpu()
                 if summary_dict is not None:
@@ -153,6 +160,8 @@ class Learner:
                             "{0:3.1f}".format(acc)
                         ]
                     )
+            
+            print(dataset['name'],'over!!!!')
 
 
 if __name__ == "__main__":
